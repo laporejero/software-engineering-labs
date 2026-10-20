@@ -1,6 +1,8 @@
 import express from 'express'
 import { randomBytes } from 'node:crypto'
 import { sessions } from './sessions.js'
+import cookieParser from 'cookie-parser'
+import { authenticate } from './middleware/authenticate.js'
 
 const app = express()
 
@@ -11,6 +13,7 @@ const testUser = {
 }
 
 app.use(express.json())
+app.use(cookieParser())
 
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok' })
@@ -41,7 +44,8 @@ app.post('/login', (req, res) => {
 
     const sessionId = randomBytes(32).toString('hex')
 
-    const expiresAt = Date.now() + 60 * 60 * 1000
+    // const expiresAt = Date.now() + 60 * 60 * 1000
+    const expiresAt = Date.now() + 10000
 
     sessions.set(sessionId, {
         userId: testUser.id,
@@ -64,6 +68,13 @@ app.post('/login', (req, res) => {
 app.get('/inspect-cookie', (req, res) => {
     res.json({
         cookieHeader: req.headers.cookie ?? null
+    })
+})
+
+app.get('/test-auth', authenticate, (req, res) => {
+    res.json({
+        message: 'Authenticated request',
+        userId: req.userId
     })
 })
 

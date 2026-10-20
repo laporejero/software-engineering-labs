@@ -1,0 +1,21 @@
+const loginResponse = await fetch('/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    email: 'user@example.com',
+    password: 'password123'
+  })
+})
+
+console.log(loginResponse.status)
+
+document.cookie
+
+FAKE COOKIE:
+document.cookie = 'session_id=fake-session-123; Path=/; SameSite=Lax'
+
+INSPECT:
+const response = await fetch('/inspect-cookie')
+console.log(await response.json())
