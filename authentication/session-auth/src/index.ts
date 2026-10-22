@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { sessions } from './sessions.js'
 import cookieParser from 'cookie-parser'
 import { authenticate } from './middleware/authenticate.js'
+import { notes } from './data/note.js'
 
 const app = express()
 
@@ -44,8 +45,8 @@ app.post('/login', (req, res) => {
 
     const sessionId = randomBytes(32).toString('hex')
 
-    // const expiresAt = Date.now() + 60 * 60 * 1000
-    const expiresAt = Date.now() + 10000
+    const expiresAt = Date.now() + 60 * 60 * 1000
+    // const expiresAt = Date.now() + 10000
 
     sessions.set(sessionId, {
         userId: testUser.id,
@@ -76,6 +77,33 @@ app.get('/test-auth', authenticate, (req, res) => {
         message: 'Authenticated request',
         userId: req.userId
     })
+})
+
+app.get('/notes/:id', authenticate, (req, res) => {
+    const id = Number(req.params.id)
+    const userId = req.userId
+
+    if (!Number.isSafeInteger(id) || id <= 0) {
+        return res.status(400).json({
+            error: 'invalid note ID'
+        })
+    }
+
+    const note = notes.find(note => note.id === id)
+
+    if (!note) {
+        return res.status(404).json({
+            error: 'note not found'
+        })
+    }
+
+    if (note.userId !== userId) {
+        return res.status(403).json({
+            error: 'access forbidden'
+        })
+    }
+
+    return res.status(200).json(note)
 })
 
 const PORT = 3000
