@@ -66,9 +66,20 @@ app.post('/login', (req, res) => {
     })
 })
 
-app.get('/inspect-cookie', (req, res) => {
-    res.json({
-        cookieHeader: req.headers.cookie ?? null
+app.post('/logout', authenticate, (req, res) => {
+    const sessionId = req.cookies.session_id as string
+
+    sessions.delete(sessionId)
+
+    res.clearCookie('session_id', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/'
+    })
+
+    return res.status(200).json({
+        message: 'Logout successful'
     })
 })
 

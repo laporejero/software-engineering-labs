@@ -1,3 +1,4 @@
+LOGIN:
 const loginResponse = await fetch('/login', {
   method: 'POST',
   headers: {
@@ -18,4 +19,12 @@ document.cookie = 'session_id=fake-session-123; Path=/; SameSite=Lax'
 
 INSPECT:
 const response = await fetch('/inspect-cookie')
+console.log(await response.json())
+
+LOGOUT:
+const response = await fetch('/logout', {
+  method: 'POST'
+})
+
+console.log(response.status)
 console.log(await response.json())
