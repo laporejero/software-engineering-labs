@@ -4,13 +4,14 @@ import { sessions } from './sessions.js'
 import cookieParser from 'cookie-parser'
 import { authenticate } from './middleware/authenticate.js'
 import { notes } from './data/note.js'
+import argon2 from 'argon2'
 
 const app = express()
 
 const testUser = {
     id: 1,
     email: 'user@example.com',
-    password: 'password123'
+    passwordHash: '$argon2id$v=19$m=65536,p=4,t=3$IVI7YuuDoYHtvFT3HRbnug$rLi2ldInaWcZEHU23M7t4+xp+SjAXwtUGERQBsEw/VQ'
 }
 
 app.use(express.json())
@@ -20,7 +21,7 @@ app.get('/health', (_req, res) => {
     res.json({ status: 'ok' })
 })
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
     const { email, password } = req.body
 
     if (
@@ -34,10 +35,15 @@ app.post('/login', (req, res) => {
         })
     }
 
-    if (
-        email !== testUser.email || 
-        password !== testUser.password
-    ) {
+    if (email !== testUser.email) {
+        return res.status(401).json({
+            error: 'invalid credentials'
+        })
+    }
+
+    const passwordIsValid = await argon2.verify(testUser.passwordHash, password)
+
+    if (!passwordIsValid) {
         return res.status(401).json({
             error: 'invalid credentials'
         })
