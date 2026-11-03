@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser'
 import { authenticate } from './middleware/authenticate.js'
 import { notes } from './data/note.js'
 import argon2 from 'argon2'
+import { validateCsrf } from './middleware/validateCsrf.js'
 
 const app = express()
 
@@ -49,14 +50,19 @@ app.post('/login', async (req, res) => {
         })
     }
 
+    // Generate an ID for this session
     const sessionId = randomBytes(32).toString('hex')
+
+    // Generate an unpredictable CSRF token for this session.
+    const csrfToken = randomBytes(32).toString('hex')
 
     const expiresAt = Date.now() + 60 * 60 * 1000
     // const expiresAt = Date.now() + 10000
 
     sessions.set(sessionId, {
         userId: testUser.id,
-        expiresAt
+        expiresAt,
+        csrfToken
     })
 
     res.cookie('session_id', sessionId, {
@@ -72,7 +78,7 @@ app.post('/login', async (req, res) => {
     })
 })
 
-app.post('/logout', authenticate, (req, res) => {
+app.post('/logout', authenticate, validateCsrf, (req, res) => {
     const sessionId = req.cookies.session_id as string
 
     sessions.delete(sessionId)
@@ -121,6 +127,24 @@ app.get('/notes/:id', authenticate, (req, res) => {
     }
 
     return res.status(200).json(note)
+})
+
+app.get('/csrf-token', authenticate, (req, res) => {
+    const session = req.session
+
+    if (!session) {
+        return res.status(401).json({
+            error: 'authentication required'
+        })
+    }
+
+    // Prevent browsers and intermediaries from caching the token.
+    res.setHeader('Cache-Control', 'no-store')
+
+    // Return only the CSRF token, not the session ID.
+    return res.status(200).json({
+        csrfToken: session.csrfToken
+    })
 })
 
 const PORT = 3000

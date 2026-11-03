@@ -25,6 +25,9 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
         return
     }
 
+    // Make the validated session available to subsequent middleware.
+    req.session = session
+
     req.userId = session.userId
 
     next()
