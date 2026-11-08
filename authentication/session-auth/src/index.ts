@@ -6,6 +6,7 @@ import { authenticate } from './middleware/authenticate.js'
 import { notes } from './data/note.js'
 import argon2 from 'argon2'
 import { validateCsrf } from './middleware/validateCsrf.js'
+import { validateOrigin } from './middleware/validateOrigin.js'
 
 const app = express()
 
@@ -22,7 +23,7 @@ app.get('/health', (_req, res) => {
     res.json({ status: 'ok' })
 })
 
-app.post('/login', async (req, res) => {
+app.post('/login', validateOrigin, async (req, res) => {
     const { email, password } = req.body
 
     if (
@@ -56,7 +57,7 @@ app.post('/login', async (req, res) => {
     // Generate an unpredictable CSRF token for this session.
     const csrfToken = randomBytes(32).toString('hex')
 
-    const expiresAt = Date.now() + 60 * 60 * 1000
+    const expiresAt = Date.now() + 60 * 60 * 1000 // 1 hour
     // const expiresAt = Date.now() + 10000
 
     sessions.set(sessionId, {
@@ -78,7 +79,7 @@ app.post('/login', async (req, res) => {
     })
 })
 
-app.post('/logout', authenticate, validateCsrf, (req, res) => {
+app.post('/logout', authenticate, validateOrigin, validateCsrf, (req, res) => {
     const sessionId = req.cookies.session_id as string
 
     sessions.delete(sessionId)
