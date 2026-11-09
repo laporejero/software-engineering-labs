@@ -7,6 +7,7 @@ import { notes } from './data/note.js'
 import argon2 from 'argon2'
 import { validateCsrf } from './middleware/validateCsrf.js'
 import { validateOrigin } from './middleware/validateOrigin.js'
+import { loginRateLimiter } from './middleware/loginRateLimiter.js'
 
 const app = express()
 
@@ -23,7 +24,7 @@ app.get('/health', (_req, res) => {
     res.json({ status: 'ok' })
 })
 
-app.post('/login', validateOrigin, async (req, res) => {
+app.post('/login', validateOrigin, loginRateLimiter, async (req, res) => {
     const { email, password } = req.body
 
     if (
